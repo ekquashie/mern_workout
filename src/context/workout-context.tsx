@@ -8,6 +8,8 @@ interface WorkoutContextValue {
   workouts: Types.Workout[];
   getWorkouts: () => Promise<any>;
   createWorkout: (data: Types.CreateWorkout) => Promise<any>;
+  deleteWorkout: (id: string) => Promise<any>;
+  updateWorkout: (id: string, data: object) => Promise<any>;
 }
 
 const WorkoutContext = createContext<WorkoutContextValue>({
@@ -15,6 +17,8 @@ const WorkoutContext = createContext<WorkoutContextValue>({
   workouts: [],
   getWorkouts: () => Promise.resolve(),
   createWorkout: () => Promise.resolve(),
+  deleteWorkout: () => Promise.resolve(),
+  updateWorkout: () => Promise.resolve(),
 });
 
 const WorkoutProvider = ({ children }: { children: React.ReactNode} ) => {
@@ -48,8 +52,41 @@ const WorkoutProvider = ({ children }: { children: React.ReactNode} ) => {
       }
     })
   };
+
+  const updateWorkout = async (id: string, data: object) => {
+    return request(
+      `${ENDPOINTS.updateWorkout}/${id}`,
+      "PATCH",
+      data,
+      setLoading,
+    ).then((response) => {
+      if(!!response && response.status === 201 && response.data) {
+        setWorkouts((prevWorkouts) => {
+          return [...prevWorkouts, response.data]
+        })
+      }
+    })
+  };
+
+  const deleteWorkout = async (id: string) => {
+    return request(
+      `${ENDPOINTS.deleteWorkout}/${id}`,
+      "DELETE",
+      null,
+      setLoading,
+    ).then((response) => {
+      if(!!response && response.status === 200 && response.data) {
+        setWorkouts((prevWorkouts) => {
+          return prevWorkouts.filter((workout) => {
+            return workout._id !== response.data._id
+          })
+        })
+      }
+    })
+  };
+
   return (
-    <WorkoutContext.Provider value={{ loading, workouts, getWorkouts, createWorkout }}>
+    <WorkoutContext.Provider value={{ loading, workouts, getWorkouts, createWorkout, deleteWorkout, updateWorkout }}>
       {children}
     </WorkoutContext.Provider>)
 }
